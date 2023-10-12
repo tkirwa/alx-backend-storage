@@ -5,8 +5,3 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255),
     country ENUM('US', 'CO', 'TN') NOT NULL DEFAULT 'US'
 );
-
--- Sample data
-INSERT INTO users (email, name, country) VALUES ("bob@dylan.com", "Bob", "US");
-INSERT INTO users (email, name, country) VALUES ("sylvie@dylan.com", "Sylvie", "CO");
-INSERT INTO users (email, name, country) VALUES ("john@dylan.com", "John", "US");
