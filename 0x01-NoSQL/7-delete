@@ -1,2 +1,2 @@
-// Delete documents with name "Holberton school"
-db.school.remove({ name: "Holberton school" })
+// Delete documents with name "Holberton school" - Delete by match
+db.school.deleteMany({ name: "Holberton school" })
