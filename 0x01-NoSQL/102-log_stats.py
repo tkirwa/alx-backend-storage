@@ -3,7 +3,7 @@
 from pymongo import MongoClient
 
 if __name__ == "__main__":
-    """ Provides stats about Nginx logs stored in MongoDB """
+    """ Provides enhanced stats about Nginx logs stored in MongoDB """
     client = MongoClient('mongodb://127.0.0.1:27017')
     nginx_collection = client.logs.nginx
 
@@ -16,20 +16,21 @@ if __name__ == "__main__":
         count = nginx_collection.count_documents({"method": method})
         print(f'\tmethod {method}: {count}')
 
-    status_check = nginx_collection.count_documents({"method": "GET",
-                                                     "path": "/status"})
+    status_check = nginx_collection.count_documents(
+        {"method": "GET", "path": "/status"}
+    )
     print(f'{status_check} status check')
 
-    print("IPs:")
-    pipeline = [
+    top_ips_pipeline = [
         {"$group": {"_id": "$ip", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}},
         {"$limit": 10}
     ]
 
-    top_ips = nginx_collection.aggregate(pipeline)
+    top_ips = nginx_collection.aggregate(top_ips_pipeline)
 
-    for ip_data in top_ips:
-        ip = ip_data["_id"]
-        count = ip_data["count"]
-        print(f'{ip}: {count}')
+    print("IPs:")
+    for ip in top_ips:
+        ip_address = ip["_id"]
+        count = ip["count"]
+        print(f'{ip_address}: {count}')
