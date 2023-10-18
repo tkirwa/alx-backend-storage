@@ -90,25 +90,24 @@ def replay(method: Callable) -> None:
     # Generate keys for input and output lists based on the method's
     #  qualified name
     key = method.__qualname__
+    inputs, outputs = key + ":inputs", key + ":outputs"
 
     # Get the Redis instance from the method's instance
     redis = method.__self__._redis
 
-    inputs = redis.lrange(key + ":inputs", 0, -1)
-    outputs = redis.lrange(key + ":outputs", 0, -1)
-
     # Get the count of how many times the method was called from Redis
-    print(f"{key} was called {len(inputs)} times:")
+    count = redis.get(key).decode("utf-8")
+    print(f"{key} was called {count} times:")
 
     # Retrieve input and output lists from Redis
     input_list = redis.lrange(inputs, 0, -1)
     output_list = redis.lrange(outputs, 0, -1)
 
     # Iterate over the input and output pairs and print them
-    for input, output in zip(inputs, outputs):
-        input = input.decode("utf-8")
-        output = output.decode("utf-8")
-        print(f"{key}(*{input}) -> {output}")
+    IOTuple = zip(input_list, output_list)
+    for inp, outp in list(IOTuple):
+        attr, data = inp.decode("utf-8"), outp.decode("utf-8")
+        print(f"{key}(*{attr}) -> {data}")
 
 
 class Cache:
