@@ -2,6 +2,7 @@
 """
 Writing strings to Redis
 """
+from functools import wraps
 import redis
 import uuid
 from typing import Union
@@ -74,12 +75,48 @@ class Cache:
         """
         return self.get(key, fn=lambda d: int(d))
 
+    @staticmethod
+    def count_calls(method: Callable) -> Callable:
+        """
+        Decorator to count how many times a method is called.
 
-if __name__ == "__main":
+        Args:
+            method: The method to be counted.
+
+        Returns:
+            Callable: Decorated method.
+        """
+        key = method.__qualname__
+
+        @wraps(method)
+        def wrapper(self, *args, **kwargs):
+            """
+            Wrapper function that increments the call count and returns the
+              original result.
+
+            Args:
+                self: The instance of the Cache class.
+                *args: Arguments for the method.
+                **kwargs: Keyword arguments for the method.
+
+            Returns:
+                Any: The result of the original method.
+            """
+            self._redis.incr(key)
+            return method(self, *args, **kwargs)
+
+        return wrapper
+
+
+if __name__ == "__main__":
     cache = Cache()
-    data = b"hello"
-    key = cache.store(data)
-    print(key)
 
-    local_redis = redis.Redis()
-    print(local_redis.get(key))
+    # Applying the count_calls decorator to the store method
+    cache.store = cache.count_calls(cache.store)
+
+    cache.store(b"first")
+    print(cache.get(cache.store.__qualname__))
+
+    cache.store(b"second")
+    cache.store(b"third")
+    print(cache.get(cache.store.__qualname__))
