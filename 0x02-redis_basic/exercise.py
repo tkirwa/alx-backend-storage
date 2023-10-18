@@ -1,39 +1,37 @@
 #!/usr/bin/env python3
-
-import redis
-import uuid
-
 """
 Writing strings to Redis
 """
+import redis
+import uuid
+from typing import Union
 
 
 class Cache:
     def __init__(self):
-        # Initialize the Redis client and flush the instance
+        """
+        Initialize the Cache class. Create a Redis client and flush the Redis
+          database.
+        """
         self._redis = redis.Redis()
         self._redis.flushdb()
 
-    def store(self, data) -> str:
+    def store(self, data: Union[str, bytes, int, float]) -> str:
         """
         Store the input data in Redis and return a randomly generated key.
 
         Args:
-            data: The data to be stored, which can be str, bytes, int,
-              or float.
+            data: The data to be stored. It can be a str, bytes, int, or float.
 
         Returns:
-            str: A randomly generated key used to store the data in Redis.
+            str: The randomly generated key used to store the data in Redis.
         """
-        # Generate a random key using uuid
         key = str(uuid.uuid4())
-        # Store the data in Redis with the generated key
         self._redis.set(key, data)
         return key
 
 
-if __name__ == "__main__":
-    # Example usage
+if __name__ == "__main":
     cache = Cache()
     data = b"hello"
     key = cache.store(data)
