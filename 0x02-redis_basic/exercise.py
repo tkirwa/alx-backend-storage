@@ -3,7 +3,7 @@
 Writing strings to Redis
 """
 import redis
-import uuid
+from uuid import uuid4
 from typing import Union, Callable
 from functools import wraps
 
@@ -41,6 +41,46 @@ def count_calls(method: Callable) -> Callable:
     return wrapper
 
 
+def call_history(method: Callable) -> Callable:
+    """Decorator to store the history of inputs and outputs for a method.
+
+    Args:
+        method (Callable): The method to store the history for.
+
+    Returns:
+        Callable: The wrapped method that stores the history.
+    """
+    key = method.__qualname__
+    inputs, outputs = key + ":inputs", key + ":outputs"
+
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        """Wrapped function that stores input parameters and the output.
+
+        Args:
+            self: The instance of the class.
+            *args: Positional arguments for the method.
+            **kwargs: Keyword arguments for the method.
+
+        Returns:
+            Any: The result of the original method.
+        """
+        # Convert the input arguments to a string and store them in Redis list
+        input_str = str(args)
+        self._redis.rpush(inputs, input_str)
+
+        # Call the original method and get its output
+        result = method(self, *args, **kwargs)
+
+        # Store the output result in Redis list
+        result_str = str(result)
+        self._redis.rpush(outputs, result_str)
+
+        return result
+
+    return wrapper
+
+
 class Cache:
     def __init__(self):
         """
@@ -50,6 +90,7 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @call_history
     @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """
@@ -61,7 +102,7 @@ class Cache:
         Returns:
             str: The randomly generated key used to store the data in Redis.
         """
-        key = str(uuid.uuid4())
+        key = str(uuid4())
         self._redis.set(key, data)
         return key
 
@@ -107,17 +148,3 @@ class Cache:
             int: The retrieved data as an integer.
         """
         return self.get(key, fn=lambda d: int(d))
-
-
-if __name__ == "__main__":
-    cache = Cache()
-
-    # Applying the count_calls decorator to the store method
-    cache.store = cache.count_calls(cache.store)
-
-    cache.store(b"first")
-    print(cache.get(cache.store.__qualname__))
-
-    cache.store(b"second")
-    cache.store(b"third")
-    print(cache.get(cache.store.__qualname__))
