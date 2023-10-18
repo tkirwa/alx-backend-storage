@@ -9,6 +9,38 @@ from typing import Union
 from typing import Callable
 
 
+def count_calls(method: Callable) -> Callable:
+    """
+    Decorator to count how many times a method is called.
+
+    Args:
+        method: The method to be counted.
+
+    Returns:
+        Callable: Decorated method.
+    """
+    key = method.__qualname__
+
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        """
+        Wrapper function that increments the call count and returns the
+          original result.
+
+        Args:
+            self: The instance of the Cache class.
+            *args: Arguments for the method.
+            **kwargs: Keyword arguments for the method.
+
+        Returns:
+            Any: The result of the original method.
+        """
+        self._redis.incr(key)
+        return method(self, *args, **kwargs)
+
+    return wrapper
+
+
 class Cache:
     def __init__(self):
         """
@@ -74,38 +106,6 @@ class Cache:
             int: The retrieved data as an integer.
         """
         return self.get(key, fn=lambda d: int(d))
-
-    @staticmethod
-    def count_calls(method: Callable) -> Callable:
-        """
-        Decorator to count how many times a method is called.
-
-        Args:
-            method: The method to be counted.
-
-        Returns:
-            Callable: Decorated method.
-        """
-        key = method.__qualname__
-
-        @wraps(method)
-        def wrapper(self, *args, **kwargs):
-            """
-            Wrapper function that increments the call count and returns the
-              original result.
-
-            Args:
-                self: The instance of the Cache class.
-                *args: Arguments for the method.
-                **kwargs: Keyword arguments for the method.
-
-            Returns:
-                Any: The result of the original method.
-            """
-            self._redis.incr(key)
-            return method(self, *args, **kwargs)
-
-        return wrapper
 
 
 if __name__ == "__main__":
