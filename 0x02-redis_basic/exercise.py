@@ -2,40 +2,40 @@
 """
 Writing strings to Redis
 """
-from functools import wraps
 import redis
 import uuid
-from typing import Union
-from typing import Callable
+from typing import Union, Callable
+from functools import wraps
 
 
 def count_calls(method: Callable) -> Callable:
-    """
-    Decorator to count how many times a method is called.
+    """Decorator to count the number of times a method is called.
 
     Args:
-        method: The method to be counted.
+        method (Callable): The method to be counted.
 
     Returns:
-        Callable: Decorated method.
+        Callable: The wrapped method that counts the calls.
     """
+    # Get the qualified name of the method to use as the key for counting.
     key = method.__qualname__
 
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        """
-        Wrapper function that increments the call count and returns the
-          original result.
+        """Wrapped function that increments the call count and calls the
+          original method.
 
         Args:
-            self: The instance of the Cache class.
-            *args: Arguments for the method.
+            self: The instance of the class.
+            *args: Positional arguments for the method.
             **kwargs: Keyword arguments for the method.
 
         Returns:
             Any: The result of the original method.
         """
+        # Increment the call count for the method.
         self._redis.incr(key)
+        # Call the original method and return its result.
         return method(self, *args, **kwargs)
 
     return wrapper
