@@ -9,7 +9,7 @@ from functools import wraps
 
 
 def count_calls(method: Callable) -> Callable:
-    """Decorator to count the number of times a method is called.
+    """Decorator to count how many times a method is called.
 
     Args:
         method (Callable): The method to be counted.
@@ -17,13 +17,13 @@ def count_calls(method: Callable) -> Callable:
     Returns:
         Callable: The wrapped method that counts the calls.
     """
-    # Get the qualified name of the method to use as the key for counting.
+    # Use the qualified name of the method as the key
     key = method.__qualname__
 
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         """Wrapped function that increments the call count and calls the
-          original method.
+        original method.
 
         Args:
             self: The instance of the class.
@@ -33,7 +33,7 @@ def count_calls(method: Callable) -> Callable:
         Returns:
             Any: The result of the original method.
         """
-        # Increment the call count for the method.
+        # Increment the call count for the method using the Redis INCR command.
         self._redis.incr(key)
         # Call the original method and return its result.
         return method(self, *args, **kwargs)
@@ -50,6 +50,7 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """
         Store the input data in Redis and return a randomly generated key.
