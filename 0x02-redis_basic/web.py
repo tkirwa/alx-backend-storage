@@ -1,34 +1,54 @@
 #!/usr/bin/env python3
-""" expiring web cache module """
+"""Web Cache and Tracker using Redis with Decorators."""
 
 import redis
 import requests
-from typing import Callable
 from functools import wraps
 
-redis = redis.Redis()
+# Initialize a connection to the Redis server
+redis_client = redis.StrictRedis(host="localhost", port=6379, db=0)
 
 
-def wrap_requests(fn: Callable) -> Callable:
-    """ Decorator wrapper """
+def cache_and_track(url):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Check if the URL count key exists in Redis
+            url_count_key = f"count:{url}"
+            if redis_client.exists(url_count_key):
+                # If it exists, increment the count
+                redis_client.incr(url_count_key)
+            else:
+                # If it doesn't exist, set it and set an expiration time of
+                #  10 seconds
+                redis_client.setex(url_count_key, 10, 1)
 
-    @wraps(fn)
-    def wrapper(url):
-        """ Wrapper for decorator guy """
-        redis.incr(f"count:{url}")
-        cached_response = redis.get(f"cached:{url}")
-        if cached_response:
-            return cached_response.decode('utf-8')
-        result = fn(url)
-        redis.setex(f"cached:{url}", 10, result)
-        return result
+            # Check if the URL content is cached in Redis
+            cached_content = redis_client.get(url)
+            if cached_content:
+                return cached_content.decode("utf-8")
 
-    return wrapper
+            # If not cached, fetch the HTML content from the URL
+            response = requests.get(url)
+            html_content = response.text
+
+            # Cache the content with an expiration time of 10 seconds
+            redis_client.setex(url, 10, html_content)
+
+            return html_content
+
+        return wrapper
+
+    return decorator
 
 
-@wrap_requests
+@cache_and_track("http://google.com")
 def get_page(url: str) -> str:
-    """get page self descriptive
-    """
-    response = requests.get(url)
-    return response.text
+    """Fetch HTML content from a URL and cache it with tracking."""
+    pass
+
+
+if __name__ == "__main__":
+    # Example usage of the get_page function
+    content = get_page("http://google.com")
+    print(content)
