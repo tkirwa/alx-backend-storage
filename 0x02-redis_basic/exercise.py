@@ -9,33 +9,13 @@ from typing import Union, Callable
 
 
 def count_calls(method: Callable) -> Callable:
-    """Decorator to count how many times a method is called.
-
-    Args:
-        method (Callable): The method to be counted.
-
-    Returns:
-        Callable: The wrapped method that counts the calls.
-    """
-    # Use the qualified name of the method as the key
+    """Decorator that counts calls made to the method."""
     key = method.__qualname__
 
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        """Wrapped function that increments the call count and calls the
-        original method.
-
-        Args:
-            self: The instance of the class.
-            *args: Positional arguments for the method.
-            **kwargs: Keyword arguments for the method.
-
-        Returns:
-            Any: The result of the original method.
-        """
-        # Increment the call count for the method using the Redis INCR command.
+        """Wrapper function for decorator functionality."""
         self._redis.incr(key)
-        # Call the original method and return its result.
         return method(self, *args, **kwargs)
 
     return wrapper
