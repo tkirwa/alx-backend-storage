@@ -61,33 +61,33 @@ def call_history(method: Callable) -> Callable:
     return wrapper
 
 
-def replay(method: Callable) -> None:
-    """Display the history of calls for a particular function.
+def replay(method: Callable):
+    """
+    Function to display the history of calls of a particular function.
 
     Args:
-        method (Callable): The method to display the history for.
+        method (Callable): The method for which to display the history
+          of calls.
+
+    Returns:
+        None
     """
-    # Generate keys for input and output lists based on the method's
-    #  qualified name
+    # Get the qualified name of the method
     key = method.__qualname__
-    inputs, outputs = key + ":inputs", key + ":outputs"
 
-    # Get the Redis instance from the method's instance
-    redis = method.__self__._redis
+    # Get the count of calls to this method from Redis
+    calls = method.__self__._redis.get(key)
 
-    # Get the count of how many times the method was called from Redis
-    count = redis.get(key).decode("utf-8")
-    print(f"{key} was called {count} times:")
+    # Print the count of calls to this method
+    print(f"{key} was called {calls.decode('utf-8')} times:")
 
-    # Retrieve input and output lists from Redis
-    input_list = redis.lrange(inputs, 0, -1)
-    output_list = redis.lrange(outputs, 0, -1)
+    # Get the inputs and outputs of all calls to this method from Redis
+    inputs = method.__self__._redis.lrange(f"{key}:inputs", 0, -1)
+    outputs = method.__self__._redis.lrange(f"{key}:outputs", 0, -1)
 
-    # Iterate over the input and output pairs and print them
-    IOTuple = zip(input_list, output_list)
-    for inp, outp in list(IOTuple):
-        attr, data = inp.decode("utf-8"), outp.decode("utf-8")
-        print(f"{key}(*{attr}) -> {data}")
+    # Print the inputs and outputs of all calls to this method
+    for inp, out in zip(inputs, outputs):
+        print(f"{key}(*{inp.decode('utf-8')}) -> {out.decode('utf-8')}")
 
 
 class Cache:
