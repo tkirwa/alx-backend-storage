@@ -2,7 +2,7 @@
 """Web Cache and Tracker using Redis.
 
 This module defines a function to fetch and cache web pages while tracking
- access counts.
+access counts.
 """
 
 import redis
@@ -16,19 +16,19 @@ def get_page(url: str) -> str:
     """Fetch HTML content from a URL and cache it with tracking.
 
     Args:
-        url (str): The URL to fetch HTML content from.
+    url (str): The URL to fetch HTML content from.
 
     Returns:
-        str: The HTML content of the URL.
+    str: The HTML content of the URL.
 
     Note:
-        This function caches the content in Redis with an expiration time
-          of 10 seconds.
-        It also tracks the number of times the URL was accessed.
+    This function caches the content in Redis with an expiration time
+    of 10 seconds.
+    It also tracks the number of times the URL was accessed.
 
     Example:
-        >>> content = get_page("http://example.com")
-        >>> print(content)
+    >>> content = get_page("http://example.com")
+    >>> print(content)
     """
     # Check if the URL count key exists in Redis
     url_count_key = f"count:{url}"
