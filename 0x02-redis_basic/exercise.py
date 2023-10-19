@@ -2,10 +2,10 @@
 """
 Writing strings to Redis
 """
+from functools import wraps
 import redis
 from uuid import uuid4
 from typing import Union, Callable
-from functools import wraps
 
 
 def count_calls(method: Callable) -> Callable:
