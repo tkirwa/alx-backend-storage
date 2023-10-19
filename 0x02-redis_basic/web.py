@@ -1,60 +1,36 @@
 #!/usr/bin/env python3
-"""Web Cache and Tracker using Redis.
-
-This module defines a function to fetch and cache web pages while tracking
-access counts.
 """
-
+Caching request module
+"""
 import redis
 import requests
+from functools import wraps
+from typing import Callable
 
-# Initialize a connection to the Redis server
-redis_client = redis.StrictRedis(host="localhost", port=6379, db=0)
 
-
-def get_page(url: str) -> str:
-    """Fetch HTML content from a URL and cache it with tracking.
-
-    Args:
-    url (str): The URL to fetch HTML content from.
-
-    Returns:
-    str: The HTML content of the URL.
-
-    Note:
-    This function caches the content in Redis with an expiration time
-    of 10 seconds.
-    It also tracks the number of times the URL was accessed.
-
-    Example:
-    >>> content = get_page("http://example.com")
-    >>> print(content)
+def track_get_page(fn: Callable) -> Callable:
+    """ Decorator for get_page
     """
-    # Check if the URL count key exists in Redis
-    url_count_key = f"count:{url}"
-    if redis_client.exists(url_count_key):
-        # If it exists, increment the count
-        redis_client.incr(url_count_key)
-    else:
-        # If it doesn't exist, set it and set an expiration time of 10 seconds
-        redis_client.setex(url_count_key, 10, 1)
+    @wraps(fn)
+    def wrapper(url: str) -> str:
+        """ Wrapper that:
+            - check whether a url's data is cached
+            - tracks how many times get_page is called
+        """
+        client = redis.Redis()
+        client.incr(f'count:{url}')
+        cached_page = client.get(f'{url}')
+        if cached_page:
+            return cached_page.decode('utf-8')
+        response = fn(url)
+        client.set(f'{url}', response, 10)
+        return response
+    return wrapper
 
-    # Check if the URL content is cached in Redis
-    cached_content = redis_client.get(url)
-    if cached_content:
-        return cached_content.decode("utf-8")
 
-    # If not cached, fetch the HTML content from the URL
+@track_get_page
+def get_page(url: str) -> str:
+    """ Makes a http request to a given endpoint
+    """
     response = requests.get(url)
-    html_content = response.text
-
-    # Cache the content with an expiration time of 10 seconds
-    redis_client.setex(url, 10, html_content)
-
-    return html_content
-
-
-if __name__ == "__main__":
-    # Example usage of the get_page function
-    content = get_page("http://google.com")
-    print(content)
+    return response.text
