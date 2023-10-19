@@ -91,6 +91,8 @@ def replay(method: Callable):
 
 
 class Cache:
+    """Class Cache for storing data in Redis."""
+
     def __init__(self):
         """
         Initialize the Cache class. Create a Redis client and flush the Redis
