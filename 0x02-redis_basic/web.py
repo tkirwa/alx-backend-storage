@@ -42,7 +42,9 @@ def cache_and_track(url):
     return decorator
 
 
-@cache_and_track("http://google.com")
+@cache_and_track(
+    "http://slowwly.robertomurray.co.uk/delay/1000/url/https://www.example.com"
+)
 def get_page(url: str) -> str:
     """Fetch HTML content from a URL and cache it with tracking."""
     pass
@@ -50,5 +52,8 @@ def get_page(url: str) -> str:
 
 if __name__ == "__main__":
     # Example usage of the get_page function
-    content = get_page("http://google.com")
+    content = get_page(
+        "http://slowwly.robertomurray.co.uk/delay/1000/url/"
+        "https://www.example.com"
+    )
     print(content)
