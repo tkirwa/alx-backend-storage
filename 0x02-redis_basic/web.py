@@ -43,7 +43,7 @@ def cache_and_track(url):
 
 
 @cache_and_track(
-    "http://slowwly.robertomurray.co.uk/delay/1000/url/https://www.example.com"
+    "http://slowwly.robertomurray.co.uk"
 )
 def get_page(url: str) -> str:
     """Fetch HTML content from a URL and cache it with tracking."""
@@ -53,7 +53,6 @@ def get_page(url: str) -> str:
 if __name__ == "__main__":
     # Example usage of the get_page function
     content = get_page(
-        "http://slowwly.robertomurray.co.uk/delay/1000/url/"
-        "https://www.example.com"
+        "http://slowwly.robertomurray.co.uk"
     )
     print(content)
