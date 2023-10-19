@@ -17,14 +17,19 @@ def get_page(url: str) -> str:
     Returns:
         str: The HTML content of the page.
     """
-    resp = requests.get(url)
-    page = resp.text
+    # Check if the page is already in cache
+    page = rc.get(url)
 
-    # Cache the result with an expiration time of 10 seconds
-    rc.setex(url, 10, page)
+    # If the page is not in cache, send a GET request to the URL
+    if not page:
+        resp = requests.get(url)
+        page = resp.text
 
-    # Increment the count for this URL
-    rc.incr(f"count:{url}")
+        # Cache the result with an expiration time of 10 seconds
+        rc.setex(url, 10, page)
+
+        # Increment the count for this URL
+        rc.incr(f"count:{url}")
 
     return page
 
