@@ -33,3 +33,7 @@ def get_page(url: str) -> str:
     r.setex(url, 10, page)
 
     return page
+
+
+if __name__ == "__main__":
+    get_page("http://slowwly.robertomurray.co.uk")
