@@ -53,7 +53,8 @@ def get_page(url: str) -> str:
         str: The HTML content of the page.
     """
     # Send a GET request to the URL
-    resp = requests.get(url)
+    resp = requests.get(f"http://slowwly.robertomurray.co.uk/"
+                        "delay/3000/url/{url}")
 
     # Get the text of the response
     page = resp.text
