@@ -1,54 +1,34 @@
 #!/usr/bin/env python3
-"""Web Cache and Tracker using Redis with Decorators."""
+""" web.py """
 
-import redis
 import requests
+import redis
+from typing import Callable
 from functools import wraps
 
-# Initialize a connection to the Redis server
-redis_client = redis.StrictRedis(host="localhost", port=6379, db=0)
+r = redis.Redis()
 
 
-def cache_and_track(url):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            # Check if the URL count key exists in Redis
-            url_count_key = f"count:{url}"
-            if redis_client.exists(url_count_key):
-                # If it exists, increment the count
-                redis_client.incr(url_count_key)
-            else:
-                # If it doesn't exist, set it and set an expiration time
-                #  of 10 seconds
-                redis_client.setex(url_count_key, 10, 1)
+def count_calls(method: Callable) -> Callable:
+    """Decorator that counts calls made to the method."""
+    key = method.__qualname__
 
-            # Check if the URL content is cached in Redis
-            cached_content = redis_client.get(url)
-            if cached_content:
-                return cached_content.decode("utf-8")
+    @wraps(method)
+    def wrapper(url):
+        """Wrapper function for decorator functionality."""
+        r.incr(key)
+        return method(url)
 
-            # If not cached, fetch the HTML content from the URL
-            response = requests.get(url)
-            html_content = response.text
-
-            # Cache the content with an expiration time of 10 seconds
-            redis_client.setex(url, 10, html_content)
-
-            return html_content
-
-        return wrapper
-
-    return decorator
+    return wrapper
 
 
-@cache_and_track("http://google.com")
+@count_calls
 def get_page(url: str) -> str:
-    """Fetch HTML content from a URL and cache it with tracking."""
-    pass
+    """Get the HTML content of a particular URL and cache it."""
+    resp = requests.get(url)
+    page = resp.text
 
+    # Cache the result with an expiration time of 10 seconds
+    r.setex(url, 10, page)
 
-if __name__ == "__main__":
-    # Example usage of the get_page function
-    content = get_page("http://google.com")
-    print(content)
+    return page
